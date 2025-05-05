@@ -32,27 +32,26 @@ CREATE TABLE Cities (
         ON DELETE CASCADE 
         ON UPDATE CASCADE
 );
-
+ -- Done
 -- Hosts table
 CREATE TABLE Hosts (
     host_id BIGINT PRIMARY KEY,
-    host_identity_verified VARCHAR(20) CHECK (host_identity_verified IN ('unconfirmed', 'verified')),
     host_name VARCHAR(100)
 );
-
+-- Done
 -- Listings table
 CREATE TABLE Listings (
     listing_id BIGINT PRIMARY KEY,
     host_id BIGINT,
     city_id INT,
-    neighbourhood VARCHAR(100),
     -- instant_bookable BOOLEAN,
     -- cancellation_policy VARCHAR(50),
     room_type VARCHAR(50),
+    listing_name VARCHAR(100) NOT NULL,
     FOREIGN KEY (host_id) REFERENCES Hosts(host_id) ON DELETE CASCADE,
     FOREIGN KEY (city_id) REFERENCES Cities(city_id) ON DELETE CASCADE
 );
-
+-- Done
 -- Pricing table
 CREATE TABLE Pricing (
     pricing_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -121,7 +120,7 @@ CREATE TABLE Flights (
 CREATE TABLE flights_classes (
     classes_id INT PRIMARY KEY AUTO_INCREMENT,
     flight_id INT,
-    class_type VARCHAR(20) CHECK (class_type IN ('fare_lg', 'low_fare')),
+    class_type VARCHAR(20) CHECK (class_type IN ('Economy', 'Business', 'First Class')),
     price FLOAT NOT NULL,
     -- seats_remaining INT NOT NULL,
     -- total_seats INT NOT NULL,
@@ -134,7 +133,7 @@ CREATE TABLE flights_classes (
 CREATE TABLE Booking (
     bookingid INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT,
-    booking_type VARCHAR(20) CHECK (booking_type IN ('flight', 'airbnb', 'package')),
+    booking_type VARCHAR(20) CHECK (booking_type IN ('flight', 'airbnb')),
     booking_date DATETIME,
     status VARCHAR(20) CHECK (status IN ('confirmed', 'cancelled')),
     FOREIGN KEY (user_id) REFERENCES Users(user_id)
