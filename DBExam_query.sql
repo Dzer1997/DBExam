@@ -17,6 +17,15 @@ CREATE TABLE User_Profiles (
     FOREIGN KEY (user_id) REFERENCES Users(user_id)
     -- FOREIGN KEY (city_id) REFERENCES Cities(city_id)
 );
+CREATE TABLE Login_Log (
+    log_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    success BOOLEAN,
+    user_agent VARCHAR(255),
+    login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- Done
 CREATE TABLE Countries (
     country_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -61,7 +70,7 @@ CREATE TABLE Pricing (
     FOREIGN KEY (listing_id) REFERENCES Listings(listing_id) ON DELETE CASCADE
 );
 
-
+-- Done
 -- Availability table
 CREATE TABLE Availability (
     availability_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -85,7 +94,7 @@ CREATE TABLE Airports (
     airport_code CHAR(3) PRIMARY KEY,
     airport_name VARCHAR(100) NOT NULL
 );
-
+-- Done
 CREATE TABLE City_Airports (
     city_id INT,        
     airport_code CHAR(3), 
@@ -97,7 +106,7 @@ CREATE TABLE City_Airports (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
-
+-- Done
 -- Create the 'Flights' table
 CREATE TABLE Flights (
     flight_id INT PRIMARY KEY AUTO_INCREMENT,  
@@ -116,7 +125,7 @@ CREATE TABLE Flights (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
-
+-- Done
 CREATE TABLE flights_classes (
     classes_id INT PRIMARY KEY AUTO_INCREMENT,
     flight_id INT,
@@ -133,22 +142,22 @@ CREATE TABLE flights_classes (
 CREATE TABLE Booking (
     bookingid INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT,
-    booking_type VARCHAR(20) CHECK (booking_type IN ('flight', 'airbnb')),
     booking_date DATETIME,
     status VARCHAR(20) CHECK (status IN ('confirmed', 'cancelled')),
     FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 
+
 CREATE TABLE Booking_Details (
     booking_detail_id INT PRIMARY KEY AUTO_INCREMENT,
-    airline_id int,
+    airline_id INT,
     booking_id INT,
-    item_id INT,  
+    item_id INT,
     item_type VARCHAR(20) CHECK (item_type IN ('flight', 'airbnb')),
     quantity INT DEFAULT 1,
     price FLOAT NOT NULL,
     FOREIGN KEY (booking_id) REFERENCES Booking(bookingid)
-    ON DELETE CASCADE
+        ON DELETE CASCADE
 );
 
 
