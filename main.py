@@ -217,9 +217,6 @@ def add_routes():
 
     connection.close()
 
-
-
-
 #add_country("mysql_import_ready_country.xlsx")    
 #add_city("mysql_import_ready_cities.xlsx")
 #add_airline("mysql_import_ready_airline.xlsx")
@@ -232,4 +229,4 @@ def add_routes():
 #add_city_airport()
 #add_flights()
 #add_flight_classes() 
-add_routes()
+#add_routes()
