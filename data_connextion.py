@@ -7,7 +7,7 @@ def connect_to_database():
         connection = mysql.connector.connect(
             host='localhost',
             database='db_examv2',
-            user='',
+            user='root',
             password=''
         )
         if connection.is_connected():
