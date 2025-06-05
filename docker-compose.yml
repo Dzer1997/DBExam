@@ -60,57 +60,6 @@ services:
       - replica3_data:/var/lib/mysql
     networks:
       - backend
-  
-  mongo1:
-    image: mongo:7.0.5
-    container_name: mongo1
-    hostname: mongo1
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo1_data:/data/db
-    networks:
-      - backend
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  mongo2:
-    image: mongo:7.0.5
-    container_name: mongo2
-    hostname: mongo2
-    ports:
-      - "27018:27017"
-    volumes:
-      - mongo2_data:/data/db
-    networks:
-      - backend
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  mongo3:
-    image: mongo:7.0.5
-    container_name: mongo3
-    hostname: mongo3
-    ports:
-      - "27019:27017"
-    volumes:
-      - mongo3_data:/data/db
-    networks:
-      - backend
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis-server:
     image: redis:latest
@@ -125,49 +74,26 @@ services:
       - "8001:8001"
     depends_on:
       - redis-server
-  
+
+  mongo:
+    image: mongo:7.0.5
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - backend
+
   data-loader:
     build:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      mongo-setup:
-        condition: service_completed_successfully
+      mongo:
+        condition: service_started
     networks:
       - backend
-
-
-  mongo-setup:
-    image: mongo:7.0.5
-    container_name: mongo-setup
-    depends_on:
-      mongo1:
-        condition: service_healthy
-      mongo2:
-        condition: service_healthy
-      mongo3:
-        condition: service_healthy
-    networks:
-      - backend
-    entrypoint: [
-      "bash",
-      "-c",
-      "echo 'Waiting for MongoDB to be ready...'; \
-      until mongosh --host mongo1:27017 --eval 'db.adminCommand(\"ping\")' > /dev/null 2>&1; do \
-        echo 'Waiting for mongo1...'; \
-        sleep 5; \
-      done; \
-      echo 'Checking if replica set is already initialized...'; \
-      IS_INIT=$(mongosh --host mongo1:27017 --quiet --eval 'try { rs.status().ok } catch(e) { 0 }'); \
-      if [ \"$IS_INIT\" != \"1\" ]; then \
-        echo 'Initializing replica set...'; \
-        mongosh --host mongo1:27017 --eval 'rs.initiate({ _id: \"rs0\", members: [ { _id: 0, host: \"mongo1:27017\" }, { _id: 1, host: \"mongo2:27017\" }, { _id: 2, host: \"mongo3:27017\" } ] });'; \
-      else \
-        echo 'Replica set already initialized. Skipping.'; \
-      fi"
-    ]
-
-
 
 
 volumes:
@@ -175,9 +101,8 @@ volumes:
   replica1_data:
   replica2_data:
   replica3_data:
-  mongo1_data:
-  mongo2_data:
-  mongo3_data:
+  mongo_data:
+
 
 networks:
   backend:

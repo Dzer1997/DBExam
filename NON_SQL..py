@@ -1,40 +1,39 @@
 import pandas as pd
 from pymongo import MongoClient
-from pymongo import ReadPreference
 from pymongo.errors import BulkWriteError
 
-
-
+# Load CSV
 df = pd.read_csv("output_part_1.csv", low_memory=False)
 
+# Clean column names: strip, lowercase, replace spaces with underscores
 df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
 
-
+# Try to convert columns to datetime or numeric where possible
 for col in df.columns:
     try:
-      
         df[col] = pd.to_datetime(df[col], errors='ignore')
     except Exception:
         pass
     try:
-      
         df[col] = pd.to_numeric(df[col], errors='ignore')
     except Exception:
         pass
 
+# Convert DataFrame to list of dictionaries for MongoDB insertion
 data = df.to_dict(orient="records")
 
-client = MongoClient("mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0")
+# Connect to local MongoDB instance
+client = MongoClient("mongodb://localhost:27017/?directConnection=true")
+
+# Select database and collection
 db = client["flights_db"]
 collection = db["flight_data"]
 
-
-# Check if collection already has data
-if collection.count_documents({}) == 0:
-    try:
-        collection.insert_many(data)
-        print("CSV inserted with all columns and auto-parsed types!")
-    except BulkWriteError as bwe:
-        print("Bulk write error:", bwe.details)
-else:
-    print("Data already exists, skipping insertion.")
+# Insert data into MongoDB collection with error handling
+try:
+    result = collection.insert_many(data)
+    print(f"Inserted {len(result.inserted_ids)} documents successfully.")
+except BulkWriteError as bwe:
+    print("Bulk write error occurred:", bwe.details)
+except Exception as e:
+    print("An error occurred:", str(e))
