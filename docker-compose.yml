@@ -1,0 +1,193 @@
+services:
+  mysql-master:
+    image: mysql:8.0
+    container_name: mysql-master
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: main_db
+      MYSQL_USER: replica
+      MYSQL_PASSWORD: replica_pass
+    command: --server-id=1 --log-bin=mysql-bin --binlog-do-db=main_db
+    volumes:
+      - master_data:/var/lib/mysql
+      - ./master.sql:/docker-entrypoint-initdb.d/master.sql
+
+
+  mysql-replica1:
+    image: mysql:8.0
+    container_name: mysql-replica1
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    command: --server-id=2 --relay-log=relay-log --read-only=1
+    depends_on:
+      - mysql-master
+    volumes:
+      - replica1_data:/var/lib/mysql
+
+  mysql-replica2:
+    image: mysql:8.0
+    container_name: mysql-replica2
+    ports:
+      - "3309:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    command: --server-id=3 --relay-log=relay-log --read-only=1
+    depends_on:
+      - mysql-master
+    volumes:
+      - replica2_data:/var/lib/mysql
+
+  mysql-replica3:
+    image: mysql:8.0
+    container_name: mysql-replica3
+    ports:
+      - "3310:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    command: --server-id=4 --relay-log=relay-log --read-only=1
+    depends_on:
+      - mysql-master
+    volumes:
+      - replica3_data:/var/lib/mysql
+  
+  mongo1:
+    image: mongo:7.0.5
+    container_name: mongo1
+    hostname: mongo1
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo1_data:/data/db
+    networks:
+      - backend
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo2:
+    image: mongo:7.0.5
+    container_name: mongo2
+    hostname: mongo2
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo2_data:/data/db
+    networks:
+      - backend
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo3:
+    image: mongo:7.0.5
+    container_name: mongo3
+    hostname: mongo3
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongo3_data:/data/db
+    networks:
+      - backend
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis-server:
+    image: redis:latest
+    container_name: redis-server
+    ports:
+      - "6379:6379"
+
+  redis-insight:
+    image: redislabs/redisinsight:1.14.0
+    container_name: redis-insight
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis-server
+  
+  data-loader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      mongo-setup:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+
+  mongo-setup:
+    image: mongo:7.0.5
+    container_name: mongo-setup
+    depends_on:
+      mongo1:
+        condition: service_healthy
+      mongo2:
+        condition: service_healthy
+      mongo3:
+        condition: service_healthy
+    networks:
+      - backend
+    entrypoint: >
+      bash -c '
+        echo "Waiting for MongoDB to be ready...";
+        until mongosh --host mongo1:27017 --eval "db.adminCommand(\"ping\")" > /dev/null 2>&1; do
+          echo "Waiting for mongo1...";
+          sleep 5;
+        done
+
+        echo "Checking if replica set is already initialized...";
+        IS_INIT=$(mongosh --host mongo1:27017 --quiet --eval "
+          try {
+            rs.status().ok
+          } catch (e) {
+            0
+          }
+        ")
+
+        if [ \"$IS_INIT\" != \"1\" ]; then
+          echo "Initializing replica set...";
+          mongosh --host mongo1:27017 --eval '
+            rs.initiate({
+              _id: "rs0",
+              members: [
+                { _id: 0, host: "mongo1:27017" },
+                { _id: 1, host: "mongo2:27017" },
+                { _id: 2, host: "mongo3:27017" }
+              ]
+            });
+          '
+        else
+          echo "Replica set already initialized. Skipping.";
+        fi
+      '
+
+
+
+volumes:
+  master_data:
+  replica1_data:
+  replica2_data:
+  replica3_data:
+  mongo1_data:
+  mongo2_data:
+  mongo3_data:
+
+networks:
+  backend:
+    name: dbexam_backend
+    driver: bridge
