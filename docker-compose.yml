@@ -13,6 +13,8 @@ services:
     volumes:
       - master_data:/var/lib/mysql
       - ./master.sql:/docker-entrypoint-initdb.d/master.sql
+    networks:
+      - backend
 
 
   mysql-replica1:
@@ -27,7 +29,8 @@ services:
       - mysql-master
     volumes:
       - replica1_data:/var/lib/mysql
-
+    networks:
+      - backend
   mysql-replica2:
     image: mysql:8.0
     container_name: mysql-replica2
@@ -40,6 +43,8 @@ services:
       - mysql-master
     volumes:
       - replica2_data:/var/lib/mysql
+    networks:
+      - backend
 
   mysql-replica3:
     image: mysql:8.0
@@ -53,6 +58,8 @@ services:
       - mysql-master
     volumes:
       - replica3_data:/var/lib/mysql
+    networks:
+      - backend
   
   mongo1:
     image: mongo:7.0.5
@@ -142,39 +149,24 @@ services:
         condition: service_healthy
     networks:
       - backend
-    entrypoint: >
-      bash -c '
-        echo "Waiting for MongoDB to be ready...";
-        until mongosh --host mongo1:27017 --eval "db.adminCommand(\"ping\")" > /dev/null 2>&1; do
-          echo "Waiting for mongo1...";
-          sleep 5;
-        done
+    entrypoint: [
+      "bash",
+      "-c",
+      "echo 'Waiting for MongoDB to be ready...'; \
+      until mongosh --host mongo1:27017 --eval 'db.adminCommand(\"ping\")' > /dev/null 2>&1; do \
+        echo 'Waiting for mongo1...'; \
+        sleep 5; \
+      done; \
+      echo 'Checking if replica set is already initialized...'; \
+      IS_INIT=$(mongosh --host mongo1:27017 --quiet --eval 'try { rs.status().ok } catch(e) { 0 }'); \
+      if [ \"$IS_INIT\" != \"1\" ]; then \
+        echo 'Initializing replica set...'; \
+        mongosh --host mongo1:27017 --eval 'rs.initiate({ _id: \"rs0\", members: [ { _id: 0, host: \"mongo1:27017\" }, { _id: 1, host: \"mongo2:27017\" }, { _id: 2, host: \"mongo3:27017\" } ] });'; \
+      else \
+        echo 'Replica set already initialized. Skipping.'; \
+      fi"
+    ]
 
-        echo "Checking if replica set is already initialized...";
-        IS_INIT=$(mongosh --host mongo1:27017 --quiet --eval "
-          try {
-            rs.status().ok
-          } catch (e) {
-            0
-          }
-        ")
-
-        if [ \"$IS_INIT\" != \"1\" ]; then
-          echo "Initializing replica set...";
-          mongosh --host mongo1:27017 --eval '
-            rs.initiate({
-              _id: "rs0",
-              members: [
-                { _id: 0, host: "mongo1:27017" },
-                { _id: 1, host: "mongo2:27017" },
-                { _id: 2, host: "mongo3:27017" }
-              ]
-            });
-          '
-        else
-          echo "Replica set already initialized. Skipping.";
-        fi
-      '
 
 
 
