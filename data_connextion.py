@@ -1,6 +1,17 @@
 import pandas as pd
 import mysql.connector
 from mysql.connector import Error
+import redis
+
+def connect_to_redis():
+    try:
+        r = redis.Redis(host='localhost', port=6379, db=0)
+        r.ping()
+        print("Successfully connected to Redis")
+        return r
+    except redis.exceptions.ConnectionError as e:
+        print(f"Redis connection error: {e}")
+        return None
 
 def connect_to_database():
     try:
@@ -11,21 +22,23 @@ def connect_to_database():
             password=''
         )
         if connection.is_connected():
-            print("Successfully connected to the database")
+            print("Successfully connected to MySQL")
             return connection
     except Error as e:
-        print(f"Error while connecting to MySQL: {e}")
+        print(f"MySQL connection error: {e}")
         return None
-    
 
-def test_connection():
-    connection = connect_to_database()
-    if connection:
-        # If connection is successful, close it
-        connection.close()
-        print("Connection closed.")
-    else:
-        print("Failed to connect to the database.")
+def test_connections():
+    db = connect_to_database()
+    redis_client = connect_to_redis()
+
+    if db:
+        db.close()
+        print("MySQL connection closed")
+
+    if redis_client:
+        redis_client.close()
+        print("Redis connection closed")
 
 if __name__ == "__main__":
-    test_connection()
+    test_connections()
