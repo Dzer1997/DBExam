@@ -1,0 +1,57 @@
+# DB Exam Project - VS Code ToDo Checklist
+
+## Overordnet mål
+- [X] Projektet omhandler polyglot persistence (flere databaser til forskellige formål)
+- [] Applikationen skal understøttes med forskellige databasemodeller
+- [] Forskellige database-typer skal implementeres til forskellige dele af applikationen
+
+## Valg og beskrivelse
+- [X] Vælg en relevant business case eller domæne (fx food delivery, biludlejning, etc.)
+- [X] Beskriv domænet, brugere og funktionelle/ikke-funktionelle krav
+
+## Databasetyper (min. 3 anbefales)
+- [X] Relationel database (PostgreSQL, MySQL, etc.)
+- [X] Dokumentdatabase (MongoDB, etc.)
+- [X] Key-Value Store (Redis, etc.)
+
+## Datamodellering
+- [] Design datamodellen for hver database
+- [] Dokumentér og begrund valg af databasetyper
+
+## Dataopsætning
+- [X] Find og indsæt realistisk, offentlig data
+- [ ] Sørg for krydsreference mellem databaser, hvis nødvendigt
+- [ ] Kontrollér datakvalitet og lav evt. validering/test
+
+## CRUD-operationer
+- [X] Implementér Create, Read, Update, Delete i backend/API
+- [ ] Vis hvordan operationer fungerer for hver database
+
+## Integration
+- [X] Integrér alle databaser i én samlet applikation
+- [] Dokumentér hvordan systemets komponenter bruger de forskellige databaser
+
+## Performance og begrundelser
+- [] Argumentér for performance og skalerbarhed
+- [] Lav evt. en sammenligning eller lille performance-test
+
+## Dokumentation og formidling
+- [ ] Teknisk dokumentation
+- [ ] ER-diagrammer (hvor relevant)
+- [ ] Arkitektur-overblik
+- [ ] Begrundelse for databasedesign og -valg
+
+## Ekstra (valgfrit men anbefalet)
+- [ ] Brug migrering/versionering (f.eks. med Liquibase/Flyway)
+- [ ] Deployment og hosting af databaser
+- [ ] Demo frontend eller API-klient (Postman, curl, etc.)
+- [ ] Tests (unit/integration)
+
+## Aflevering
+- [X] Synops (3-5 sider) er skrevet og klar
+- [ ] Kode og data er uploadet til GitHub og linket i Wiseflow
+- [] Projektet kan afvikles og demonstreres lokalt
+
+## Gruppe og eksamen
+- [X] Gruppe består af max 3 studerende
+- [ ] Alle eksamensregler er overholdt
