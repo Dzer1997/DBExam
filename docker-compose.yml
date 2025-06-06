@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # MySQL Master
+  mysql-master:
+    image: mysql:8.0
+    container_name: mysql-master
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: replica
+      MYSQL_PASSWORD: replica_pass
+    command: >
+      --server-id=1
+      --log-bin=mysql-bin
+      --binlog-do-db=main_db
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+    volumes:
+      - master_data:/var/lib/mysql
+      - ./db-scripts/master.sql:/docker-entrypoint-initdb.d/master.sql
+
+  # MySQL Replicas
+  mysql-replica1:
+    image: mysql:8.0
+    container_name: mysql-replica1
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    command: >
+      --server-id=2
+      --relay-log=relay-log
+      --read-only=1
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+    depends_on:
+      - mysql-master
+    volumes:
+      - replica1_data:/var/lib/mysql
+
+  mysql-replica2:
+    image: mysql:8.0
+    container_name: mysql-replica2
+    ports:
+      - "3309:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    command: >
+      --server-id=3
+      --relay-log=relay-log
+      --read-only=1
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+    depends_on:
+      - mysql-master
+    volumes:
+      - replica2_data:/var/lib/mysql
+
+  # Redis
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # MongoDB Replica Set
+  mongo1:
+    image: mongo:6
+    container_name: mongo1
+    ports:
+      - "27017:27017"
+    command: ["--replSet", "rs0"]
+    volumes:
+      - mongo1_data:/data/db
+
+  mongo2:
+    image: mongo:6
+    container_name: mongo2
+    ports:
+      - "27018:27017"
+    command: ["--replSet", "rs0"]
+    volumes:
+      - mongo2_data:/data/db
+
+  mongo3:
+    image: mongo:6
+    container_name: mongo3
+    ports:
+      - "27019:27017"
+    command: ["--replSet", "rs0"]
+    volumes:
+      - mongo3_data:/data/db
+
+  # Python App
+  app:
+    build: .
+    container_name: my-python-app
+    depends_on:
+      - mysql-master
+      - redis
+      - mongo1
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - .:/app
+    command: ["python", "Call.py"]
+
+volumes:
+  master_data:
+  replica1_data:
+  replica2_data:
+  redis_data:
+  mongo1_data:
+  mongo2_data:
+  mongo3_data:
